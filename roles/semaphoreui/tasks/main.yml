@@ -1,0 +1,46 @@
+---
+- name: Install dependencies
+  apt:
+    name: "{{ item }}"
+    state: present
+    update_cache: yes
+  loop:
+    - apt-transport-https
+    - ca-certificates
+    - software-properties-common
+
+- name: Add Docker GPG key
+  apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    state: present
+
+- name: Add Docker repository
+  apt_repository:
+    repo: "deb [arch=amd64] https://download.docker.com/linux/debian {{ ansible_lsb.codename }} stable"
+    state: present
+
+- name: Install Docker
+  apt:
+    name: docker-ce
+    state: present
+
+- name: Install Docker Compose
+  get_url:
+    url: "https://github.com/docker/compose/releases/download/v2.10.0/docker-compose-{{ ansible_system }}-x86_64"
+    dest: /usr/local/bin/docker-compose
+    mode: '0755'
+
+- name: Create semaphoreui directory
+  file:
+    path: /opt/semaphore
+    state: directory
+
+- name: Copy Docker Compose file
+  template:
+    src: docker-compose.yml
+    dest: /opt/semaphore/docker-compose.yml
+
+- name: Start Docker Compose
+  command: docker-compose up -d
+  args:
+    chdir: /opt/semaphore
